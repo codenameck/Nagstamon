@@ -4,6 +4,8 @@ from Nagstamon.Servers.Generic import GenericServer
 from Nagstamon.Objects import (GenericHost, GenericService, Result)
 from Nagstamon.Config import conf
 from Nagstamon.thirdparty.sensugo_api import SensuGoAPI, SensuGoAPIException
+from Nagstamon.Helpers import HumanReadableDurationFromTimestamp
+from time import time
 
 # ckk for debugging
 import debugpy
@@ -69,7 +71,7 @@ class SensuGoServer(GenericServer):
         service.name = event['check']['metadata']['name']
         service.status = SensuGoAPI.parse_check_status(event['check']['status'])
         service.last_check = datetime.fromtimestamp(int(event['timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
-        service.duration = "05m 15s"
+        service.duration = self._duration_since(event['check']['last_ok'])
         service.status_information = event['check']['output']
         service.acknowledged = event['check']['is_silenced']
         service.notifications_disabled = event['check']['is_silenced']
@@ -87,6 +89,13 @@ class SensuGoServer(GenericServer):
             self.new_hosts[service_host].site = service.site
 
         self.new_hosts[service_host].services[service.name] = service
+
+    def _duration_since(self, timestamp):
+        if (timestamp == 0) or (timestamp > time()):
+            duration_text = 'n/a'
+        else:
+            duration_text = HumanReadableDurationFromTimestamp(timestamp)
+        return duration_text
 
     def set_acknowledge(self, info_dict):
         silenece_args = {
