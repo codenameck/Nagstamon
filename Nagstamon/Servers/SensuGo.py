@@ -6,15 +6,7 @@ from Nagstamon.Config import conf
 from Nagstamon.thirdparty.sensugo_api import SensuGoAPI, SensuGoAPIException
 from Nagstamon.Helpers import HumanReadableDurationFromTimestamp
 from time import time
-
-# ckk for debugging
-import debugpy
 from datetime import datetime
-
-debugpy.listen(5678)
-print("Waiting for debugger attach")
-debugpy.wait_for_client()
-
 class SensuGoServer(GenericServer):
     TYPE = 'SensuGo'
     MENU_ACTIONS = ['Acknowledge']
@@ -45,11 +37,9 @@ class SensuGoServer(GenericServer):
             try:
                 self._sensugo_api.auth(self.username, self.password, verify)
             except Exception:
-                print('ckk error is here')
                 self.Error(sys.exc_info())
 
     def _get_status(self):
-        print('_get_status at: ' + str(datetime.now()))
         try:
             response_code, events = self._sensugo_api.get_all_events()
             self._create_services(events)

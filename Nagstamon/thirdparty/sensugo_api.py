@@ -73,8 +73,3 @@ class SensuGoAPI(object):
         silence_api = f'/api/core/v2/namespaces/{namespace}/silenced/{check}'
         self._session.put(self._base_api_url + silence_api, json=kwargs)
 
-if __name__ == '__main__':
-    from datetime import datetime
-    print('--- In sensugo_api main ---')
-    print('sensugo_api now: ' + str(datetime.now()))
-
