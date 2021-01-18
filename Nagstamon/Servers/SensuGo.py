@@ -7,6 +7,8 @@ from Nagstamon.thirdparty.sensugo_api import SensuGoAPI, SensuGoAPIException
 from Nagstamon.Helpers import HumanReadableDurationFromTimestamp
 from time import time
 from datetime import datetime
+
+NAMESPACE_SEPARATOR = ' ||| '
 class SensuGoServer(GenericServer):
     TYPE = 'SensuGo'
     MENU_ACTIONS = ['Acknowledge']
@@ -55,9 +57,10 @@ class SensuGoServer(GenericServer):
             self._insert_service_to_hosts(service)
 
     def _parse_event_to_service(self, event):
-        # debugpy.breakpoint()
         service = GenericService()
-        service.host = event['entity']['metadata']['namespace']
+        namespace_host = event['entity']['metadata']['namespace'] + NAMESPACE_SEPARATOR + event['entity']['metadata']['name']
+        service.hostid = namespace_host
+        service.host = namespace_host
         service.name = event['check']['metadata']['name']
         service.status = SensuGoAPI.parse_check_status(event['check']['status'])
         service.last_check = datetime.fromtimestamp(int(event['timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
@@ -88,10 +91,12 @@ class SensuGoServer(GenericServer):
         return duration_text
 
     def set_acknowledge(self, info_dict):
+        namespace = self._extract_namespace(info_dict['host'])
+
         silenece_args = {
             'metadata': {
                 'name': info_dict['service'],
-                'namespace': info_dict['host']
+                'namespace': namespace
             },
             'expire': -1,
             'expire_on_resolve': True,
@@ -100,4 +105,7 @@ class SensuGoServer(GenericServer):
             'check': info_dict['service']
         }
         self._sensugo_api.create_or_update_silence(silenece_args)
+
+    def _extract_namespace(self, host_column: str):
+        return host_column.split(NAMESPACE_SEPARATOR)[0]
 
